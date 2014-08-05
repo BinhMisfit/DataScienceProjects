@@ -1,0 +1,110 @@
+#!/usr/bin/python
+####################################
+########## Binh Nguyen #############
+### Email: ntbinhptnk@gmail.com ####
+####################################
+
+import sys
+import ast
+
+# In fact, finding an exact solution for this problem is NP-problem.
+# We can use the following dynamic programming method to efficiently find the 
+# optimal cost and optimal solution with the least weight! However, we also
+# need several constraints here.
+
+INFINITY=100000
+error=0.01
+
+def init(input_path):
+    f=open(input_path,"rb")
+    data=f.read()
+    data=data.strip().split("\n")
+    data=filter(None, data)
+    all_packages=[]
+    for row in data:
+        info=row.split(" ")
+        weight_limit=int(info[0])
+        index=[]
+        weight=[]
+        cost=[]
+        for i in range(0,len(info)-2):
+            item=info[i+2].replace("(","").replace(")","").replace("$","").split(",")
+            index.append(int(item[0]))
+            weight.append(float(item[1]))
+            cost.append(float(item[2]))
+            one_package=[weight_limit,index,weight,cost]
+        all_packages.append(one_package)
+    f.close()
+    return all_packages
+  
+def find_optimal_cost(weight_limit,index,weight,cost):
+    N=len(weight)
+    scaling=1/error
+    W=long(weight_limit*scaling)
+    V=[[0 for x in xrange(W+1)] for x in xrange(N+1)]
+    for i in range(0,N):
+        for w in range(0,W+1):
+            if (scaling*weight[i]<=w) and ((cost[i]+V[i][long(round(w-scaling*weight[i]))])>V[i][w]):
+                V[i+1][w]=cost[i]+V[i][long(round(w-scaling*weight[i]))]
+            else:
+                V[i+1][w]=V[i][w]
+    optimal_cost=V[N][W]
+    return optimal_cost
+
+def find_optimal_solution(optimal_cost,index,weight,cost):
+    C=int(optimal_cost)
+    N=len(cost)
+    S=[[INFINITY for x in xrange(C+1)] for x in xrange(N+1)]
+    position=[[INFINITY for y in xrange(C+1)] for y in xrange(N+1)]
+    for i in range(0,N):
+        for c in range(0,C+1):
+            if (cost[i]<=c):
+                if (cost[i]==c):
+                    if weight[i]<=S[i][c]:
+                        S[i+1][c]=weight[i]
+                        position[i+1][c]=1
+                    else:
+                        S[i+1][c]=S[i][c]
+                        position[i+1][c]=0
+                else:
+                    if (weight[i]+S[i][int(c-cost[i])]<S[i][c]):
+                        S[i+1][c]=weight[i]+S[i][int(c-cost[i])]
+                        position[i+1][c]=1
+                    else:
+                        S[i+1][c]=S[i][c]
+                        position[i+1][c]=0
+            else:
+                S[i+1][c]=S[i][c]
+                position[i+1][c]=0
+    optimal_solution=""
+    for i in range(0,N):
+        if (position[N-i][int(round(C))]==1):
+            optimal_solution=optimal_solution+str(index[N-i-1])+","
+            C=C-cost[N-i-1]
+    if optimal_solution=="":
+        optimal_solution="-"
+    else:
+        optimal_solution=optimal_solution[:-1]
+    return optimal_solution
+
+if __name__ == "__main__":
+    
+    list_arguments=ast.literal_eval(str(sys.argv))
+    
+    INPUT_PATH=list_arguments[1]
+
+    all_packages= init(INPUT_PATH)
+
+    output_data=""
+    for package in all_packages:
+        weight_limit=package[0]
+        index=package[1]
+        weight=package[2]
+        cost=package[3]
+        optimal_cost=find_optimal_cost(weight_limit,index,weight,cost)
+        optimal_solution=find_optimal_solution(optimal_cost,index,weight,cost)
+        output_data=output_data+optimal_solution+"\n"
+    print output_data
+    
+    
+    
